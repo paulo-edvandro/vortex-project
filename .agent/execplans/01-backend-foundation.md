@@ -940,24 +940,28 @@ Não deverá existir ainda implementação de usuário, autenticação ou anúnc
 
 ## Progress
 
-* [ ] Projeto Spring Boot inicializado.
-* [ ] Maven Wrapper validado.
-* [ ] PostgreSQL configurado no Docker Compose.
-* [ ] Profiles configurados.
-* [ ] Flyway configurado.
-* [ ] Actuator configurado.
-* [ ] Testcontainers configurado.
-* [ ] Teste de integração da fundação aprovado.
-* [ ] Build completo aprovado.
-* [ ] Aplicação iniciada com profile dev.
-* [ ] Health check validado.
-* [ ] Diff final revisado.
+* [x] 2026-08-10 23:02 - Projeto Spring Boot inicializado e compilado com Java release 21.
+* [x] 2026-08-10 23:02 - Maven Wrapper 3.3.4 binário validado com Maven 3.9.16.
+* [x] 2026-08-10 23:08 - PostgreSQL 17.10 configurado e validado como saudável no Docker Compose.
+* [x] 2026-08-10 23:27 - Profiles `dev`, `test` e `prod` configurados e inspecionados.
+* [x] 2026-08-10 23:27 - Flyway conectado ao PostgreSQL 17.10 e schema history inicializado.
+* [x] 2026-08-10 23:27 - Actuator limitado ao health check e validado com HTTP 200.
+* [x] 2026-08-10 23:29 - Testcontainers configurado com PostgreSQL 17.10 e `@ServiceConnection`.
+* [x] 2026-08-10 23:29 - Teste de integração da fundação aprovado: 1 teste, 0 falhas e 0 erros.
+* [x] 2026-08-10 23:34 - Build completo aprovado com `mvnw.cmd clean package` e JAR gerado.
+* [x] 2026-08-10 23:34 - Aplicação empacotada iniciada com o profile `dev`.
+* [x] 2026-08-10 23:34 - Health check validado com HTTP 200 e status `UP`.
+* [x] 2026-08-10 23:36 - Status, diff, arquivos ignorados, secrets e escopo revisados.
+* [x] 2026-08-11 00:05 - Correções da auditoria final revalidadas: dependências simplificadas, configuração compartilhável do PostgreSQL Testcontainer, testes e `clean package` aprovados.
 
 ---
 
 ## Surprises & Discoveries
 
-Nenhuma descoberta relevante até o momento.
+* O script `mvnw.cmd` no modo `only-script` do Maven Wrapper 3.3.4, gerado pelo Spring Initializr, falhou no Windows PowerShell 5.1 ao acessar `Target[0]` em um valor nulo. A distribuição binária oficial da mesma versão não apresenta essa falha.
+* O ambiente local possui JDK 25, não JDK 21. O Maven compilou corretamente com `release 21`, conforme a configuração do projeto, mas emitiu um warning do Jansi sobre acesso nativo restrito no JDK 25.
+* Os serviços PostgreSQL 18 e 16 instalados no Windows já ocupavam, respectivamente, as portas 5432 e 5433. Para validar o Compose sem interromper serviços externos, a execução local utilizou `POSTGRES_PORT=55432` e o `DB_URL` correspondente.
+* Flyway registra o warning `No migrations found` nesta fundação. O comportamento é esperado porque o plano proíbe migrations vazias e de domínio nesta etapa; ainda assim, Flyway criou sua tabela de histórico e concluiu sem erro.
 
 ---
 
@@ -993,8 +997,44 @@ Consequência:
 
 Springdoc será introduzido quando houver API real para expor e validar.
 
+### Decisão — Utilizar a distribuição binária do Maven Wrapper 3.3.4
+
+Motivo:
+
+O modo `only-script` oficial falhou no PowerShell 5.1 antes de iniciar o Maven, enquanto a distribuição binária oficial usa `maven-wrapper.jar` e funciona no mesmo ambiente.
+
+Consequência:
+
+O repositório inclui `.mvn/wrapper/maven-wrapper.jar`, além dos scripts e das propriedades do Wrapper.
+
+### Decisão — Permitir override da porta publicada pelo PostgreSQL
+
+Motivo:
+
+A porta 5432 continua sendo o padrão exigido pelo plano, mas pode estar ocupada no ambiente do desenvolvedor.
+
+Consequência:
+
+`compose.yaml` aceita `POSTGRES_PORT`, com fallback para 5432. A validação desta execução utilizou 55432 sem alterar o padrão do projeto.
+
+### Decisão — Simplificar dependências e compartilhar o PostgreSQL Testcontainer
+
+Motivo:
+
+Os starters especializados de teste não eram utilizados pela suíte atual, e o container declarado diretamente na classe de teste não oferecia configuração reutilizável para futuros testes de integração.
+
+Consequência:
+
+O bloco de testes utiliza somente o starter geral do Spring Boot e as integrações necessárias para Testcontainers/PostgreSQL. O container passa a ser um bean com `@ServiceConnection` em uma `@TestConfiguration` importável.
+
 ---
 
 ## Outcomes & Retrospective
 
-Ainda não concluído.
+Foi entregue uma aplicação Spring Boot 4.1.0 compilada para Java 21, com Maven Wrapper, profiles, PostgreSQL reproduzível por Docker Compose, Flyway, JPA e Actuator.
+
+A fundação foi validada por compilação, teste de integração com PostgreSQL Testcontainer, package do JAR, inicialização do artefato com o profile `dev` e health check HTTP 200.
+
+Nenhum domínio, autenticação, JWT ou endpoint `/api/v1` foi implementado. O warning de ausência de migrations é esperado até o primeiro ExecPlan de domínio.
+
+Nesta máquina, a validação do banco de desenvolvimento exigiu `POSTGRES_PORT=55432` porque PostgreSQL 18 e 16 locais já utilizavam 5432 e 5433. O padrão versionado permanece 5432.

@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/vortex_marketplace}
+    username: ${DB_USERNAME:vortex}
+    password: ${DB_PASSWORD:vortex}

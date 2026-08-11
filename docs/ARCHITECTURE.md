@@ -57,7 +57,7 @@ A aplicação será um **monólito modular simples**.
 O projeto será mantido em um monorepo:
 
 ```text
-vortex-marketplace/
+vortex-project/
 │
 ├── backend/
 ├── frontend/
